@@ -13,9 +13,8 @@ module.exports = (router, path) => {
             jwt.verify(token, config.secret,async (err, decoded) => {
                 if (err) return res.status(403).send({ msg: 'Hết phiên làm việc. Vui lòng đăng nhập lại!' });
                 
-                let per = await dbs.execute(`SELECT gp.* from user_permission gp
-                where gp.username= ? and gp.path = ? and ?? = 1`, [decoded.username, req.path =='/'?`/${path}`:`/${path}${req.path}`, req.method=='DELETE' ? 'del' : req.method]) 
-                               
+                let per = await dbs.execute(`SELECT gp.* from group_permission gp, map_employee_group meg
+                where gp.group_id=meg.group_id and meg.employee_id= ? and gp.path = ? and ?? = 1`, [decoded.id, req.path =='/'?`/${path}`:`/${path}${req.path}`, req.method=='DELETE' ? 'del' : req.method])                    
                 if(!per[0]){
                     return res.status(403).send({ msg: 'Bạn không có quyền truy cập !' });
                 }

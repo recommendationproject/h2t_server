@@ -4,10 +4,10 @@ const auth = require('../../utils/auth');
 
 
 module.exports = (router) => {
-    auth(router, 'user');
+    auth(router, 'employee');
 
     router.get('/', async (req, res) => {
-        let rs = await dbs.execute('select * from td_user');
+        let rs = await dbs.execute('select * from employee');
         res.json(rs);
     });
 };
