@@ -60,7 +60,7 @@ const Service = {
           console.log(results.length);
           let rs = table + '1'.padStart(20 - table.length, '0');
           if (results.length > 0) {
-            rs = table + (parseInt(results[0].customerid.replace(table, '')) + 1).toString().padStart(20 - table.length, '0');
+            rs = table + (parseInt(Object.values(results[0])[0].replace(table, '')) + 1).toString().padStart(20 - table.length, '0');
           }
           resolve(rs);
         });
