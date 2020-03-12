@@ -18,6 +18,19 @@ router.get('/product', async (req, res, next) => {
   res.json({product: product[0], images: images});
 });
 
+router.post('/product', async (req, res, next) => {
+  console.log(req.headers);
+  res.json();
+  // const product_id = await dbs.getNextID('product', 'id');  
+  // let rs =await dbs.execute(`insert into product(id, name, price, amount, description, category_id) values(?,?,?,?,?,?)`,[product_id, req.headers.name, parseInt(req.headers.price), parseInt(req.headers.amount), req.headers.description, req.headers.category_id]);
+  // res.json(rs);
+});
+
+router.get('/allcategory', async (req, res, next) => {
+  let category =await dbs.execute(`SELECT * FROM category`,[]);
+  res.json(category);
+});
+
 router.post('/signin', async function (req, res) {
   let username = req.body.username;
   let password = req.body.password;
