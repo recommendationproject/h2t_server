@@ -86,22 +86,50 @@ router.post('/signup', [
 });
 
 router.get('/allcategory', async function (req, res) {
-  let rs = await dbs.execute(`select * from category`, []);
+  let rs = await dbs.execute(`select * from category order by gender`, []);
+  res.json(rs);
+});
+
+router.get('/categoryGroupByGender', async function (req, res) {
+  let rs = await dbs.execute(`select * from category order by gender`, []);
   var groups = {};
   for (var i = 0; i < rs.length; i++) {
-    var groupName =  rs[i].gender;
+    var groupName = rs[i].gender;
     if (!groups[groupName]) {
       groups[groupName] = [];
     }
-    groups[groupName].push({id: rs[i].id, name: rs[i].name});
+    groups[groupName].push({ id: rs[i].id, name: rs[i].name });
   }
   let returns = [];
   for (var gr in groups) {
-    const getGr = rs.find(r => r.gender === gr);    
-    returns.push({ group: gr, group_eng:getGr.gender_eng, items: groups[gr] });
+    const getGr = rs.find(r => r.gender === gr);
+    returns.push({ group: gr, group_eng: getGr.gender_eng, items: groups[gr] });
   }
   res.json(returns);
+});
 
+router.get('/category/:type/:categoryId', async function (req, res) {
+  let limit = req.query.limit ? parseInt(req.query.limit) : 12;
+  let page = req.query.page ? parseInt(req.query.page) : 1;
+  let offset = limit * (page - 1);
+  let type = req.params.type==='type' ? 'c.gender_eng':'c.id';
+  let cateName = req.params.type==='type' ? 'c.gender':'c.name';
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and ?? = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [type, req.params.categoryId, limit, offset]);
+  let rsAll = await dbs.execute(`SELECT count(*) totalRow FROM product p, category c where p.status=1 and p.category_id = c.id and ?? = ?`, [type, req.params.categoryId]);
+  let cateNameRs =  await dbs.execute(`SELECT distinct ?? name FROM category c where ?? = ? `, [cateName,type, req.params.categoryId]);  
+  res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateNameRs[0].name});
+});
+
+router.get('/listProduct/:type', async function (req, res) {
+  let limit = req.query.limit ? parseInt(req.query.limit) : 12;
+  let page = req.query.page ? parseInt(req.query.page) : 1;
+  let offset = limit * (page - 1);
+  // let type = req.params.type==='type' ? 'c.gender_eng':'c.id';
+  let cateName = req.params.type==='new' ? 'NEW':'SALE';
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [limit, offset]);
+  let rsAll = await dbs.execute(`SELECT count(*) totalRow FROM product p, category c where p.status=1 and p.category_id = c.id`, []);
+  // let cateNameRs =  await dbs.execute(`SELECT distinct ?? name FROM category c where ?? = ? `, [cateName,type, req.params.categoryId]);  
+  res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateName});
 });
 
 module.exports = router;

@@ -57,7 +57,6 @@ const Service = {
         conn = Service.getConn();
         conn.query(sql, bind, function (error, results) {
           if (error) reject(error);
-          console.log(results.length);
           let rs = table + '1'.padStart(20 - table.length, '0');
           if (results.length > 0) {
             rs = table + (parseInt(Object.values(results[0])[0].replace(table, '')) + 1).toString().padStart(20 - table.length, '0');
