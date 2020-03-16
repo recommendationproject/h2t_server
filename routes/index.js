@@ -19,7 +19,7 @@ router.post('/signin', async function (req, res) {
         delete user[0].password;
         // let path = await dbs.execute('SELECT gp.path, gp.post, gp.get, gp.put, gp.del from group_permission gp, map_employee_group meg, employee emp where gp.group_id=meg.group_id and meg.employee_id = emp.id and emp.username =  ?',[username]);
         var token = jwt.sign(JSON.parse(JSON.stringify(user[0])), config.secret, { expiresIn: config.expires });
-        res.json({ success: true, token: token, expires: new Date(Date.now() + config.expires * 1000) });
+        res.json({ success: true, token: token,user:user[0], expires: new Date(Date.now() + config.expires * 1000) });
       } else {
         res.status(200).send({ success: false, msg: 'Sai Tên Đăng Nhập Hoặc Mật Khẩu !' });
       }
@@ -132,4 +132,39 @@ router.get('/listProduct/:type', async function (req, res) {
   res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateName});
 });
 
+router.post('/addCart', async function (req, res) {
+  // console.log(req.body);
+  // res.json('');
+  let check = await dbs.execute(`select * from  cart where product_id= ? and customer_id= ?`, [req.body.product_id, req.body.customer_id]);
+  let rs = null;
+  if(check.length > 0){
+   rs = await dbs.execute(`update cart set amount = ? where product_id= ? and customer_id= ?`, [check[0].amount+req.body.amount, req.body.product_id, req.body.customer_id]);
+  }else{
+  rs = await dbs.execute(`insert into cart(product_id, customer_id, amount) values(?,?,?)`, [req.body.product_id, req.body.customer_id, req.body.amount]);
+  }
+  res.json(rs);
+});
+
+router.get('/cart', async function (req, res) {
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, c.amount FROM product p, images i, cart c where i.product_id = p.id and p.id = c.product_id and p.status=1 and c.customer_id = ? group by i.product_id having min(i.id) order by p.id`, [req.headers.customer_id]);  
+  res.json(rs);
+});
+
+router.get('/checkout', async function (req, res) {
+  let check = await dbs.execute(`select * from  cart where customer_id= ?`, [req.headers.customer_id]);
+  if (check.length > 0) {
+    const orderid = await dbs.getNextID('orders','id'); 
+    let createOrder = await dbs.execute(`insert into orders(id, customer_id) values(?,?)`, [orderid, req.headers.customer_id]);
+    if(createOrder.affectedRows>0){
+      let createOrderDetail = await dbs.execute(`insert into order_detail(product_id,order_id, amount) select product_id, ?, amount from cart where customer_id= ?`, [orderid, req.headers.customer_id]);
+      if(createOrderDetail.affectedRows>0){
+        let deleteCart = await dbs.execute(`delete from  cart where customer_id= ?`, [req.headers.customer_id]);
+      }
+      res.json('deleteCart');
+    }
+    
+  }
+  // let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, c.amount FROM product p, images i, cart c where i.product_id = p.id and p.id = c.product_id and p.status=1 and c.customer_id = ? group by i.product_id having min(i.id) order by p.id`, [req.headers.customer_id]);  
+  res.json('');
+});
 module.exports = router;
