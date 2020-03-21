@@ -9,6 +9,8 @@ const privateRouteOrder = require('./orderPrivate');
 
 router.get('/byuser', async (req, res, next) => {
     let rs = await dbs.execute(`SELECT o.id, o.customer_id, c.name, o.status status_id, s.status, o.israting FROM orders o, customer c, status s where o.customer_id = c.id and o.status = s.id and customer_id = ? order by o.status`, [req.headers.id]);
+    console.log(rs);
+    
     res.json(rs);
   });
 

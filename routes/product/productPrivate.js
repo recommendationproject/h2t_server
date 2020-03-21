@@ -26,4 +26,9 @@ module.exports = (router) => {
     let rs = await dbs.execute(`update product set status = ? where product_id = ?`, [req.body.status, req.body.product_id]);
     res.json(rs);
   });
+
+  router.get('/recommend', async (req, res, next) => {
+    let rs = await dbs.execute(`SELECT r.user_id, c.name user_name, r.product_id, p.name product_name, r.val, r.create_date FROM recommend_product r, product p, customer c where r.product_id = p.id and r.user_id = c.id order by r.user_id, val desc`, []);
+    res.json(rs);
+  });
 };
