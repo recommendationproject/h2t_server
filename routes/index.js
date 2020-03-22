@@ -3,7 +3,7 @@ const router = express.Router();
 const dbs = require('../utils/dbs');
 const jwt = require('jsonwebtoken');
 const config = require('../utils/config');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { check, validationResult, body } = require('express-validator');
 
 router.post('/signin', async function (req, res) {

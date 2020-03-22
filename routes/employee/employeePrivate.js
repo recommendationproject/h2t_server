@@ -1,13 +1,13 @@
 const dbs = require('../../utils/dbs');
 const auth = require('../../utils/auth');
 const { check, validationResult, body } = require('express-validator');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 /* Authentication */
 
 
 module.exports = (router) => {
-    auth(router, 'employee');
+    // auth(router, 'employee');
 
     /* Add Employee */
     router.post('/', [
@@ -54,6 +54,8 @@ module.exports = (router) => {
 
     router.get('/', async (req, res, next) => {
         let rs = await dbs.execute(`SELECT id, name, address, phone, username FROM employee`, []);
+        console.log(rs);
+        
         res.json(rs);
     });
 
