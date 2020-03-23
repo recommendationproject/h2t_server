@@ -111,6 +111,8 @@ router.get('/categoryGroupByGender', async function (req, res) {
 });
 
 router.get('/category/:type/:categoryId', async function (req, res) {
+  console.log(1);
+  
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
