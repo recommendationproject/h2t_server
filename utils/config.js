@@ -1,8 +1,8 @@
 module.exports = {
-    host: '3.18.104.68',
+    host: '34.92.167.188',
     user: 'root',
     password: '123456a@',
-    database: 'h2t_shop',
+    database: 'h2_shop',
     // host: 'localhost',
     // user: 'root',
     // password: '',
