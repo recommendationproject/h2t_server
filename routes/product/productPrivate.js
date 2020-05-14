@@ -14,13 +14,15 @@ module.exports = (router) => {
   router.post('/', async (req, res, next) => {
     const product_id = await dbs.getNextID('product', 'id');
     let rs = await dbs.execute(`insert into product(id, name, price, amount, description, category_id) values(?,?,?,?,?,?)`, [product_id, req.body.name, parseInt(req.body.price), 0, req.body.description, req.body.category_id]);
-    let bind = [];
-    req.body.img.forEach(element => {
-      bind.push([product_id, element])
-    });
-    await dbs.execute(`insert into images(product_id, images) values ?`, [bind]);
+    if (req.body.img.length) {
+      let bind = [];
+      req.body.img.forEach(element => {
+        bind.push([product_id, element])
+      });
+      await dbs.execute(`insert into images(product_id, images) values ?`, [bind]);
+    }
     if (rs.affectedRows > 0) {
-      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id group by i.product_id having min(i.id) order by p.id desc and p.id = ?', [product_id]);
+      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id and p.id = ? group by i.product_id having min(i.id) order by p.id desc', [product_id]);
       res.json({ type: 'success', msg: 'Thêm sản phẩm thành công !', product: rsProduct });
     } else {
       res.json({ type: 'error', msg: 'Thêm sản phẩm không thành công !' });
@@ -36,10 +38,20 @@ module.exports = (router) => {
     await dbs.execute(`delete from images where product_id= ?`, [req.body.id]);
     await dbs.execute(`insert into images(product_id, images) values ?`, [bind]);
     if (rs.affectedRows > 0) {
-      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id group by i.product_id having min(i.id) order by p.id desc and p.id = ?', [req.body.id]);
+      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id  and p.id = ? group by i.product_id having min(i.id) order by p.id desc', [req.body.id]);
       res.json({ type: 'success', msg: 'Sửa sản phẩm thành công !', product: rsProduct[0] });
     } else {
       res.json({ type: 'error', msg: 'Sửa sản phẩm không thành công !' });
+    }
+  });
+
+  router.delete('/:id', async (req, res, next) => {
+    let checkProduct = await dbs.execute(`select * from warehouse_import where product_id = ?`, [req.params.id]);    
+    if (checkProduct.length) {
+      res.json({ type: 'error', msg: 'Sản phẩm đã nhập kho ! Không thể xóa !' });
+    } else {
+      await dbs.execute('delete from product where id = ?', [req.params.id]);
+      res.json({ type: 'success', msg: 'Xóa sản phẩm thành công !', productId: req.params.id });
     }
   });
 
