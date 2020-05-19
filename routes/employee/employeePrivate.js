@@ -42,7 +42,7 @@ module.exports = (router) => {
                 let rs = await dbs.execute(sql, bind);
 
                 if (rs.affectedRows > 0) {
-                    let rsAdd = await dbs.execute(`SELECT id, name, address, phone, username FROM employee where id = ?`, [employee_id])
+                    let rsAdd = await dbs.execute(`SELECT id, name, address, phone, username, status FROM employee where id = ?`, [employee_id])
                     res.json({ type: 'success', msg: 'Thêm thành công !', employee: rsAdd });
                 } else {
                     res.json({ type: 'error', msg: 'Thêm không thành công !' });
@@ -87,7 +87,7 @@ module.exports = (router) => {
                 }
                 let rs = await dbs.execute(sql, bind);                
                 if (rs.affectedRows > 0) {
-                    let rsAdd = await dbs.execute(`SELECT id, name, address, phone, username FROM employee where id = ?`, [req.body.id])
+                    let rsAdd = await dbs.execute(`SELECT id, name, address, phone, username, status FROM employee where id = ?`, [req.body.id])
                     res.json({ type: 'success', msg: 'Sửa thành công !', employee: rsAdd });
                 } else {
                     res.json({ type: 'error', msg: 'Sửa không thành công !' });
@@ -101,10 +101,17 @@ module.exports = (router) => {
     });
 
     router.get('/', async (req, res, next) => {
-        let rs = await dbs.execute(`SELECT id, name, address, phone, username FROM employee`, []);
-        console.log(rs);
-
+        let rs = await dbs.execute(`SELECT id, name, address, phone, username, status FROM employee`, []);
         res.json(rs);
+    });
+
+    router.delete('/', async (req, res, next) => {
+        let rs = await dbs.execute(`update employee set status = ? where id = ?`, [req.body.status, req.body.employeeid]);
+        if (rs.affectedRows > 0) {
+            res.json({ type: 'success', msg: 'Xóa thành công !', employeeid: req.body.employeeid, status: req.body.status });
+        } else {
+            res.json({ type: 'error', msg: 'Xóa không thành công !' });
+        }
     });
 
 };

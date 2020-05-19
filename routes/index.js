@@ -136,6 +136,14 @@ router.get('/listProduct/:type', async function (req, res) {
   res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateName});
 });
 
+router.get('/recommentBySupp/:suppid', async function (req, res) {
+  let limit = req.query.limit ? parseInt(req.query.limit) : 12;
+  let page = req.query.page ? parseInt(req.query.page) : 1;
+  let offset = limit * (page - 1);
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c,  where i.product_id = p.id and p.status=1 and p.category_id = c.id and suppid = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [suppid, limit, offset]);
+  res.json(rs);
+});
+
 router.post('/addCart', async function (req, res) {
   // console.log(req.body);
   // res.json('');
