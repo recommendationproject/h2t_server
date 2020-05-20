@@ -105,12 +105,12 @@ module.exports = (router) => {
         res.json(rs);
     });
 
-    router.delete('/', async (req, res, next) => {
+    router.delete('/', async (req, res, next) => {        
         let rs = await dbs.execute(`update employee set status = ? where id = ?`, [req.body.status, req.body.employeeid]);
         if (rs.affectedRows > 0) {
-            res.json({ type: 'success', msg: 'Xóa thành công !', employeeid: req.body.employeeid, status: req.body.status });
+            res.json({ type: 'success', msg: 'Chuyển trạng thái thành công !', employeeid: req.body.employeeid, status: req.body.status });
         } else {
-            res.json({ type: 'error', msg: 'Xóa không thành công !' });
+            res.json({ type: 'error', msg: 'Chuyển trạng thái không thành công !' });
         }
     });
 

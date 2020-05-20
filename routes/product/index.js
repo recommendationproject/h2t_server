@@ -21,6 +21,12 @@ router.get('/', async (req, res, next) => {
 });
 
 /* GET home page. */
+router.post('/history', async (req, res, next) => {
+  let rsHistory =await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i where i.product_id = p.id and p.status=1 and p.id in (?) group by i.product_id having min(i.id) order by p.id desc limit 6`,[req.body.lst]);
+  res.json(rsHistory);
+});
+
+/* GET home page. */
 router.get('/detail', async (req, res, next) => {
   let product =await dbs.execute(`SELECT * FROM product where id = ?`,[req.headers.id]);
   let images =await dbs.execute(`SELECT images 'original', images 'thumbnail' FROM images where product_id = ?`,[req.headers.id]);
