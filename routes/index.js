@@ -137,10 +137,14 @@ router.get('/listProduct/:type', async function (req, res) {
 });
 
 router.get('/recommentBySupp/:suppid', async function (req, res) {
+  console.log(req.params.suppid);
+  
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
-  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c,  where i.product_id = p.id and p.status=1 and p.category_id = c.id and suppid = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [suppid, limit, offset]);
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.suppid = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.params.suppid, limit, offset]);
+  console.log(rs);
+  
   res.json(rs);
 });
 
