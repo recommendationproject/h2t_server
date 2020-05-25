@@ -124,6 +124,14 @@ router.get('/category/:type/:categoryId', async function (req, res) {
   res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateNameRs[0].name});
 });
 
+router.post('/search', async function (req, res) {  
+  let limit = req.query.limit ? parseInt(req.query.limit) : 12;
+  let page = req.query.page ? parseInt(req.query.page) : 1;
+  let offset = limit * (page - 1);
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.name like CONCAT('%', ?,  '%') group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.body.keyword, limit, offset]);  
+  res.json(rs);
+});
+
 router.get('/listProduct/:type', async function (req, res) {
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
@@ -136,15 +144,21 @@ router.get('/listProduct/:type', async function (req, res) {
   res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateName});
 });
 
-router.get('/recommentBySupp/:suppid', async function (req, res) {
-  console.log(req.params.suppid);
-  
+router.get('/recommentBySupp/:suppid', async function (req, res) {  
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
-  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.suppid = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.params.suppid, limit, offset]);
-  console.log(rs);
-  
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.suppid = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.params.suppid, limit, offset]);  
+  res.json(rs);
+});
+
+router.get('/recommentByPrice/:price', async function (req, res) {  
+  let fprice = req.params.price+50000;
+  let tprice = req.params.price+50000;
+  let limit = req.query.limit ? parseInt(req.query.limit) : 12;
+  let page = req.query.page ? parseInt(req.query.page) : 1;
+  let offset = limit * (page - 1);
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.price between ? and ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [fprice, tprice, limit, offset]);  
   res.json(rs);
 });
 
