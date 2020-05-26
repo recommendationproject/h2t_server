@@ -129,7 +129,10 @@ router.post('/search', async function (req, res) {
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
   let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.name like CONCAT('%', ?,  '%') group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.body.keyword, limit, offset]);  
-  res.json(rs);
+  let rsAll = await dbs.execute(`SELECT count(*) + 0 totalRow FROM product p where p.name like CONCAT('%', ?,  '%')`, [req.body.keyword]);
+  console.log(rs);
+  
+  res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: req.body.keyword});
 });
 
 router.get('/listProduct/:type', async function (req, res) {
@@ -177,6 +180,19 @@ router.post('/addCart', async function (req, res) {
 
 router.get('/cart', async function (req, res) {
   let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, c.amount FROM product p, images i, cart c where i.product_id = p.id and p.id = c.product_id and p.status=1 and c.customer_id = ? group by i.product_id having min(i.id) order by p.id`, [req.headers.customer_id]);  
+  res.json(rs);
+});
+
+router.get('/amountProduct', async function (req, res) {
+  console.log(JSON.parse(req.headers.arr));
+  let rs = await dbs.execute(`SELECT id, amount FROM product p where id in (?)`, [JSON.parse(req.headers.arr)]); 
+  console.log(rs);
+  
+  res.json('');
+});
+
+router.delete('/cart', async function (req, res) {
+  let rs = await dbs.execute(`delete FROM cart where product_id =? and customer_id=?`, [req.headers.product_id, req.headers.customer_id]);  
   res.json(rs);
 });
 

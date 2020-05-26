@@ -22,6 +22,8 @@ router.get('/', async (req, res, next) => {
 
 /* GET home page. */
 router.post('/history', async (req, res, next) => {
+  console.log(req.body.lst);
+  
   let rsHistory =await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i where i.product_id = p.id and p.status=1 and p.id in (?) group by i.product_id having min(i.id) order by p.id desc limit 6`,[req.body.lst]);
   res.json(rsHistory);
 });
