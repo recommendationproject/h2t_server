@@ -156,8 +156,8 @@ router.get('/recommentBySupp/:suppid', async function (req, res) {
 });
 
 router.get('/recommentByPrice/:price', async function (req, res) {  
-  let fprice = req.params.price+50000;
-  let tprice = req.params.price+50000;
+  let fprice = parseInt(req.params.price)-50000;  
+  let tprice = parseInt(req.params.price)+50000;
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
@@ -184,9 +184,11 @@ router.get('/cart', async function (req, res) {
 });
 
 router.get('/amountProduct', async function (req, res) {
-  console.log(JSON.parse(req.headers.arr));
-  let rs = await dbs.execute(`SELECT id, amount FROM product p where id in (?)`, [JSON.parse(req.headers.arr)]); 
-  console.log(rs);
+  console.log(req.headers.arr);
+  
+  // console.log(JSON.parse(req.headers.arr));
+  // let rs = await dbs.execute(`SELECT id, amount FROM product p where id in (?)`, [JSON.parse(req.headers.arr)]); 
+  // console.log(rs);
   
   res.json('');
 });
@@ -196,20 +198,22 @@ router.delete('/cart', async function (req, res) {
   res.json(rs);
 });
 
-router.get('/checkout', async function (req, res) {
-  let check = await dbs.execute(`select * from  cart where customer_id= ?`, [req.headers.customer_id]);
-  if (check.length > 0) {
-    const orderid = await dbs.getNextID('orders','id'); 
-    let createOrder = await dbs.execute(`insert into orders(id, customer_id) values(?,?)`, [orderid, req.headers.customer_id]);
-    if(createOrder.affectedRows>0){
-      let createOrderDetail = await dbs.execute(`insert into order_detail(product_id,order_id, amount) select product_id, ?, amount from cart where customer_id= ?`, [orderid, req.headers.customer_id]);
-      if(createOrderDetail.affectedRows>0){
-        let deleteCart = await dbs.execute(`delete from  cart where customer_id= ?`, [req.headers.customer_id]);
-      }
-      res.json('deleteCart');
-    }
+router.post('/checkout', async function (req, res) {
+  console.log(req.body);
+  
+  // let check = await dbs.execute(`select * from  cart where customer_id= ?`, [req.headers.customer_id]);
+  // if (check.length > 0) {
+  //   const orderid = await dbs.getNextID('orders','id'); 
+  //   let createOrder = await dbs.execute(`insert into orders(id, customer_id) values(?,?)`, [orderid, req.headers.customer_id]);
+  //   if(createOrder.affectedRows>0){
+  //     let createOrderDetail = await dbs.execute(`insert into order_detail(product_id,order_id, amount) select product_id, ?, amount from cart where customer_id= ?`, [orderid, req.headers.customer_id]);
+  //     if(createOrderDetail.affectedRows>0){
+  //       let deleteCart = await dbs.execute(`delete from  cart where customer_id= ?`, [req.headers.customer_id]);
+  //     }
+  //     res.json('deleteCart');
+  //   }
     
-  }
+  // }
   // let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, c.amount FROM product p, images i, cart c where i.product_id = p.id and p.id = c.product_id and p.status=1 and c.customer_id = ? group by i.product_id having min(i.id) order by p.id`, [req.headers.customer_id]);  
   res.json('');
 });
