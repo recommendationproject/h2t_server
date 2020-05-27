@@ -110,9 +110,7 @@ router.get('/categoryGroupByGender', async function (req, res) {
   res.json(returns);
 });
 
-router.get('/category/:type/:categoryId', async function (req, res) {
-  console.log(1);
-  
+router.get('/category/:type/:categoryId', async function (req, res) {  
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
@@ -183,14 +181,27 @@ router.get('/cart', async function (req, res) {
   res.json(rs);
 });
 
-router.get('/amountProduct', async function (req, res) {
-  console.log(req.headers.arr);
-  
-  // console.log(JSON.parse(req.headers.arr));
-  // let rs = await dbs.execute(`SELECT id, amount FROM product p where id in (?)`, [JSON.parse(req.headers.arr)]); 
-  // console.log(rs);
-  
-  res.json('');
+router.post('/amountProduct', async function (req, res) {  
+  let rs = await dbs.execute(`update cart set amount = ? where product_id = ? and customer_id = ?`, [req.body.amount, req.body.productid, req.body.customerid]);   
+  res.json(rs);
+});
+
+router.get('/amountProduct', async function (req, res) {  
+  if (JSON.parse(req.headers.arr).length) {
+    let rs = await dbs.execute(`SELECT id, amount FROM product p where id in (?)`, [JSON.parse(req.headers.arr)]);   
+  res.json(rs);
+  }else {
+  res.json(null);
+  }
+});
+
+router.get('/getCommentByProduct', async function (req, res) {  
+ 
+    let rs = await dbs.execute(`SELECT od.id, od.rating, od.comment, c.name FROM order_detail od, orders o, customer c WHERE o.id = od.order_id and o.customer_id = c.id and product_id = ? 
+    union ALL
+    SELECT od.id, od.rating, od.comment, c.name FROM order_detail od, orders o, guest c WHERE o.id = od.order_id and o.customer_id = c.id and product_id = ? `, [req.headers.id, req.headers.id]);   
+  res.json(rs);
+ 
 });
 
 router.delete('/cart', async function (req, res) {
@@ -199,23 +210,36 @@ router.delete('/cart', async function (req, res) {
 });
 
 router.post('/checkout', async function (req, res) {
-  console.log(req.body);
   
-  // let check = await dbs.execute(`select * from  cart where customer_id= ?`, [req.headers.customer_id]);
-  // if (check.length > 0) {
-  //   const orderid = await dbs.getNextID('orders','id'); 
-  //   let createOrder = await dbs.execute(`insert into orders(id, customer_id) values(?,?)`, [orderid, req.headers.customer_id]);
-  //   if(createOrder.affectedRows>0){
-  //     let createOrderDetail = await dbs.execute(`insert into order_detail(product_id,order_id, amount) select product_id, ?, amount from cart where customer_id= ?`, [orderid, req.headers.customer_id]);
-  //     if(createOrderDetail.affectedRows>0){
-  //       let deleteCart = await dbs.execute(`delete from  cart where customer_id= ?`, [req.headers.customer_id]);
-  //     }
-  //     res.json('deleteCart');
-  //   }
-    
-  // }
-  // let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, c.amount FROM product p, images i, cart c where i.product_id = p.id and p.id = c.product_id and p.status=1 and c.customer_id = ? group by i.product_id having min(i.id) order by p.id`, [req.headers.customer_id]);  
-  res.json('');
+  let check = await dbs.execute(`select * from  cart where customer_id= ?`, [req.body.customer_id]);
+  if (check.length > 0) {
+    const orderid = await dbs.getNextID('orders','id'); 
+    let createOrder = await dbs.execute(`insert into orders(id, customer_id, address, comment, paymentmethod) values(?,?,?,?,?)`, [orderid, req.body.customer_id, req.body.address, req.body.comment, req.body.tt]);
+    if(createOrder.affectedRows>0){
+      let createOrderDetail = await dbs.execute(`insert into order_detail(product_id,order_id, amount) select product_id, ?, amount from cart where customer_id= ?`, [orderid, req.body.customer_id]);
+      if(createOrderDetail.affectedRows>0){
+         await dbs.execute(`delete from cart where customer_id= ?`, [req.body.customer_id]);
+      }
+    }
+  }
+  res.json('rs');
+});
+
+router.post('/checkoutforguest', async function (req, res) {    
+  if (req.body.customer) {
+    const guestid = await dbs.getNextID('guest','id'); 
+     await dbs.execute(`insert into guest(id, name, phone, email, address) values(?,?,?,?,?)`, [guestid, req.body.customer.name, req.body.customer.phone, req.body.customer.email, req.body.customer.address]);
+    const orderid = await dbs.getNextID('orders','id'); 
+    let createOrder = await dbs.execute(`insert into orders(id, customer_id, address, comment, paymentmethod) values(?,?,?,?,?)`, [orderid, guestid, req.body.customer.address, req.body.customer.comment, req.body.customer.tt]);
+    if(createOrder.affectedRows>0){
+      let bind  = [];
+      req.body.product.forEach(e => {
+          bind.push([e.id, orderid, e.amount])
+      });
+      await dbs.execute(`insert into order_detail(product_id,order_id, amount) values ?`, [bind]);
+    }
+  }
+  res.json('rs');
 });
 
 router.get('/recommend', async function (req, res) {
