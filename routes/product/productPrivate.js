@@ -11,6 +11,30 @@ module.exports = (router) => {
     res.json(rs);
   });
 
+  router.get('/promotionadd', async (req, res, next) => {
+    let rs = await dbs.execute(`SELECT p.id, p.name, i.images FROM product p, images i where i.product_id = p.id and p.id not in (select product_id from discount where to_date >=now()) group by i.product_id having min(i.id) order by p.id desc`, []);
+    res.json(rs);
+  });
+
+  router.get('/promotiontype', async (req, res, next) => {
+    let rs = await dbs.execute(`SELECT typeid, typename from promotiontype`, []);
+    res.json(rs);
+  });
+
+  router.post('/promotion', async (req, res) => {
+    let item = req.body.item;
+    let bind = [];
+    item.forEach(e => {
+        bind.push([req.body.name, e, req.body.StartTime, req.body.EndTime, req.body.condition])
+    });
+    let rs = await dbs.execute(`insert into discount(name, product_id, start_date, to_date, promotiontypeid) values ?`, [bind]);
+    if (rs.affectedRows > 0) {
+        res.json({ type: 'success', msg: 'Cập nhật trạng thái thành công !' });
+    } else {
+        res.json({ type: 'fail', msg: 'Cập nhật trạng thái không thành công !' });
+    }
+});
+
   router.post('/', async (req, res, next) => {
     const product_id = await dbs.getNextID('product', 'id');
     let rs = await dbs.execute(`insert into product(id, name, price, amount, description, category_id) values(?,?,?,?,?,?)`, [product_id, req.body.name, parseInt(req.body.price), 0, req.body.description, req.body.category_id]);
