@@ -21,11 +21,16 @@ module.exports = (router) => {
     res.json(rs);
   });
 
+  router.get('/promotion', async (req, res, next) => {
+    let rs = await dbs.execute(`SELECT d.id, d.name dname, p.name, i.images, start_date, to_date, pt.typename FROM product p, images i, discount d, promotiontype pt where pt.typeid = d.promotiontypeid and p.id = d.product_id and i.product_id = p.id group by i.product_id having min(i.id) order by start_date desc`, []);
+    res.json(rs);
+  });
+
   router.post('/promotion', async (req, res) => {
-    let item = req.body.item;
+    let item = req.body.item;    
     let bind = [];
     item.forEach(e => {
-        bind.push([req.body.name, e, req.body.StartTime, req.body.EndTime, req.body.condition])
+        bind.push([req.body.name, e, req.body.StartTime, req.body.EndTime, req.body.type])
     });
     let rs = await dbs.execute(`insert into discount(name, product_id, start_date, to_date, promotiontypeid) values ?`, [bind]);
     if (rs.affectedRows > 0) {

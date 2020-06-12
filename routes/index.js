@@ -139,9 +139,15 @@ router.get('/listProduct/:type', async function (req, res) {
   let offset = limit * (page - 1);
   // let type = req.params.type==='type' ? 'c.gender_eng':'c.id';
   let cateName = req.params.type==='new' ? 'NEW':'SALE';
-  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [limit, offset]);
-  let rsAll = await dbs.execute(`SELECT count(*) totalRow FROM product p, category c where p.status=1 and p.category_id = c.id`, []);
-  // let cateNameRs =  await dbs.execute(`SELECT distinct ?? name FROM category c where ?? = ? `, [cateName,type, req.params.categoryId]);  
+  let rs = [];
+  let rsAll = [];
+  if(req.params.type==='sale'){
+    rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, p.price - (p.price/100*d.promotiontypeid) discountprice FROM discount d, product p, images i, category c where d.product_id = p.id  and i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [limit, offset]);    
+    rsAll = await dbs.execute(`SELECT count(*) totalRow FROM discount d, product p, images i, category c where d.product_id = p.id  and i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc`, []);
+  } else{
+    rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [limit, offset]);
+    rsAll = await dbs.execute(`SELECT count(*) totalRow FROM product p, category c where p.status=1 and p.category_id = c.id`, []);
+  }
   res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateName});
 });
 
