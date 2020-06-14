@@ -13,11 +13,17 @@ var orderRouter = require('./routes/order');
 var supplyRouter = require('./routes/supply');
 var whRouter = require('./routes/wh');
 var app = express();
+var CronJob = require('cron').CronJob;
+const job = require('./utils/cron');
 
 app.use(cors());
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
+var cronRecommend = new CronJob('00 05 16 * * *', function() {
+  job.genRecommend();
+ });
+ cronRecommend.start();
 
 app.use(logger('dev'));
 app.use(express.json());

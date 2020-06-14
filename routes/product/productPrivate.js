@@ -7,7 +7,7 @@ module.exports = (router) => {
   // auth(router, 'product');
 
   router.get('/admin', async (req, res, next) => {
-    let rs = await dbs.execute(`SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id group by i.product_id having min(i.id) order by p.id desc`, []);
+    let rs = await dbs.execute(`SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.detaildescription, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id group by i.product_id having min(i.id) order by p.id desc`, []);
     res.json(rs);
   });
 
@@ -41,8 +41,10 @@ module.exports = (router) => {
 });
 
   router.post('/', async (req, res, next) => {
+    console.log(req.body.supply);
+    
     const product_id = await dbs.getNextID('product', 'id');
-    let rs = await dbs.execute(`insert into product(id, name, price, amount, description, category_id) values(?,?,?,?,?,?)`, [product_id, req.body.name, parseInt(req.body.price), 0, req.body.description, req.body.category_id]);
+    let rs = await dbs.execute(`insert into product(id, name, price, amount, description, detaildescription, category_id, suppid) values(?,?,?,?,?,?,?, ?)`, [product_id, req.body.name, parseInt(req.body.price), 0, req.body.description, req.body.detaildescription, req.body.category_id, req.body.supply]);
     if (req.body.img.length) {
       let bind = [];
       req.body.img.forEach(element => {
@@ -51,7 +53,7 @@ module.exports = (router) => {
       await dbs.execute(`insert into images(product_id, images) values ?`, [bind]);
     }
     if (rs.affectedRows > 0) {
-      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id and p.id = ? group by i.product_id having min(i.id) order by p.id desc', [product_id]);
+      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.detaildescription, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id and p.id = ? group by i.product_id having min(i.id) order by p.id desc', [product_id]);
       res.json({ type: 'success', msg: 'Thêm sản phẩm thành công !', product: rsProduct });
     } else {
       res.json({ type: 'error', msg: 'Thêm sản phẩm không thành công !' });
@@ -59,7 +61,7 @@ module.exports = (router) => {
   });
 
   router.put('/', async (req, res, next) => {
-    let rs = await dbs.execute(`update product set name = ?, price = ?, description = ?, category_id = ? where id =?`, [req.body.name, parseInt(req.body.price), req.body.description, req.body.category_id, req.body.id]);
+    let rs = await dbs.execute(`update product set name = ?, price = ?, description = ?, detaildescription=?, category_id = ? where id =?`, [req.body.name, parseInt(req.body.price), req.body.description, req.body.detaildescription, req.body.category_id, req.body.id]);
     let bind = [];
     req.body.img.forEach(element => {
       bind.push([req.body.id, element])
@@ -67,7 +69,7 @@ module.exports = (router) => {
     await dbs.execute(`delete from images where product_id= ?`, [req.body.id]);
     await dbs.execute(`insert into images(product_id, images) values ?`, [bind]);
     if (rs.affectedRows > 0) {
-      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id  and p.id = ? group by i.product_id having min(i.id) order by p.id desc', [req.body.id]);
+      let rsProduct = await dbs.execute('SELECT p.id, p.name, p.price, p.amount, i.images, p.category_id, p.description, p.detaildescription, p.status, c.name cate_name, c.gender FROM product p, images i, category c where i.product_id = p.id and c.id = p.category_id  and p.id = ? group by i.product_id having min(i.id) order by p.id desc', [req.body.id]);
       res.json({ type: 'success', msg: 'Sửa sản phẩm thành công !', product: rsProduct[0] });
     } else {
       res.json({ type: 'error', msg: 'Sửa sản phẩm không thành công !' });
