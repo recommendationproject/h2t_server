@@ -55,7 +55,7 @@ module.exports = (router) => {
 
     });
 
-    /* Add Employee */
+    /* Update Employee */
     router.put('/', [
         check('name', 'Tên không được để trống !').notEmpty(),
         check('phone', 'Số dt không được để trống !').notEmpty(),
@@ -65,7 +65,6 @@ module.exports = (router) => {
             }
         })
     ], async (req, res) => {
-
         try {
             // Check Errors
             const errors = validationResult(req);
