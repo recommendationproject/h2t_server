@@ -99,6 +99,30 @@ module.exports = (router) => {
 
     });
 
+    router.put('/person', async (req, res) => {
+        console.log(req.body);
+
+        let id = req.body.id;
+        let body = req.body;
+        delete body.id;
+        let key = Object.keys(body);
+        let value = Object.values(body);
+        let sql = `update employee set `
+        let bind = []
+        key.forEach((e, i) => {
+            sql = sql + (i < key.length - 1 ? `?? = ?, ` : `?? = ? `)
+            bind.push(e);
+            bind.push(value[i]);
+        });
+        sql = sql + `WHERE ?? = ?`
+        bind.push('id');
+        bind.push(id);
+        let rs = await dbs.execute(sql, bind);
+
+
+        res.json(rs);
+    });
+
     router.get('/', async (req, res, next) => {
         let rs = await dbs.execute(`SELECT id, name, address, phone, username, status FROM employee`, []);
         res.json(rs);
