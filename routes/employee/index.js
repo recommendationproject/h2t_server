@@ -10,6 +10,7 @@ const privateRouteUser = require('./employeePrivate');
 router.post('/signin', async function (req, res) {
     let username = req.body.username;
     let password = req.body.password;
+  console.log(1);
   
     try {
       let user = await dbs.execute('select * from employee where username = ?',[username]);    
@@ -18,16 +19,15 @@ router.post('/signin', async function (req, res) {
         let rs = bcrypt.compareSync(password, user[0].password);   
         if (rs) {
           delete user[0].password;
-          let path = await dbs.execute('SELECT gp.path, gp.post, gp.get, gp.put, gp.del from group_permission gp, map_employee_group meg, employee emp where gp.group_id=meg.group_id and meg.employee_id = emp.id and emp.username =  ?',[username]);
           var token = jwt.sign(JSON.parse(JSON.stringify(user[0])), config.secret, { expiresIn: config.expires });
-          res.json({ success: true,user:user[0], token: token, expires: new Date(Date.now() + config.expires * 1000), path: path });
-        } else {
+          res.json({ success: true,user:user[0], token: token, expires: new Date(Date.now() + config.expires * 1000)});
+        } else {          
           res.json({ success: false, msg: 'Sai Tên Đăng Nhập Hoặc Mật Khẩu !' });
         }
       } else {
         res.json({ success: false, msg: 'Sai Tên Đăng Nhập Hoặc Mật Khẩu !' });
       }
-    } catch (error) {    
+    } catch (error) {   
       res.json({ success: false, msg: 'Sai Tên Đăng Nhập Hoặc Mật Khẩu !' });
     }
   });
