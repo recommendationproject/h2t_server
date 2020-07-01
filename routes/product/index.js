@@ -20,6 +20,14 @@ router.get('/', async (req, res, next) => {
   res.json({new: rsNew, hot: rsHot, recommend: rsRecommend});
 });
 
+router.get('/recommendbyid/:id', async (req, res, next) => {
+  let rsRecommend = [];
+  
+     rsRecommend =await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i where i.product_id = p.id and p.status=1 and p.id in (select productrecommendid from recommendproducttogether where productid = ? order by val desc) group by i.product_id having min(i.id)`,[req.params.id]);
+ 
+  res.json({recommend: rsRecommend});
+});
+
 /* GET home page. */
 router.post('/history', async (req, res, next) => {
   console.log(req.body.lst);

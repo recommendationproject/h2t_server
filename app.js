@@ -21,7 +21,7 @@ app.use(cors());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 var cronRecommend = new CronJob('00 05 16 * * *', function() {
-  job.genRecommend();
+  job.genRecommendProductTogether();
  });
  cronRecommend.start();
 

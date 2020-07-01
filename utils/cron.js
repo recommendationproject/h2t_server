@@ -1,5 +1,107 @@
 'use strict'
 const dbs = require('./dbs')
+
+const genRecommendProductTogether = async () => {
+    try {
+        // Lấy các sản phẩm mua cùng nhau trong đơn hàng
+        let rs = await dbs.execute(`SELECT GROUP_CONCAT(product_id) gid FROM order_detail group by order_id`, []);
+        let mainarr = [];
+        // lưu từng sản và sản phẩm mua cùng dưới dạng 1-1
+        rs.forEach(e => {
+            let arr = e.gid.split(',');
+            for (let i = 0; i < arr.length; i++) {
+                for (let j = 0; j < arr.length; j++) {
+                    if (arr[i] !== arr[j]) {
+                        mainarr.push(arr[i] + '-' + arr[j])
+                    }
+                }
+            }
+        });
+        mainarr.sort();
+        var current = null;
+        var cnt = 0;
+        let tmpArr = [];
+        // đếm số lần sản phẩm được mua cùng nhau
+        for (var i = 0; i < mainarr.length; i++) {
+            if (mainarr[i] != current) {
+                if (cnt > 0) {
+                    let checkexist = false;
+                    tmpArr.forEach(e => {
+                        if (e[current.split('-')[0]]) {
+                            e[current.split('-')[0]].push([current.split('-')[0], current.split('-')[1], cnt]);
+                            checkexist = true;
+                        }
+                    });
+                    if (checkexist === false) {
+                        // console.log({[current.split('-')[0]]: [[current.split('-')[0], current.split('-')[1], cnt]]});
+
+                        tmpArr.push({ [current.split('-')[0]]: [[current.split('-')[0], current.split('-')[1], cnt]] })
+                    }
+                }
+                current = mainarr[i];
+                cnt = 1;
+            } else {
+                cnt++;
+            }
+        }
+        if (cnt > 0) {
+            let checkexist = false;
+            tmpArr.forEach(e => {
+                if (e[current.split('-')[0]]) {
+
+                    e[current.split('-')[0]].push([current.split('-')[0], current.split('-')[1], cnt]);
+                    checkexist = true;
+
+
+                }
+            });
+            if (checkexist === false) {
+                tmpArr.push({ [current.split('-')[0]]: [[current.split('-')[0], current.split('-')[1], cnt]] })
+            }
+        }
+        // sắp xếp mảng con và lấy 5 sản phẩm gợi ý cho mỗi sản phẩm
+        let arrIns = [];
+        tmpArr.forEach(arr => {
+            let tmp = quickSort(Object.values(arr)[0]);
+            tmp.reverse();
+            for (let i = 0; i < 5; i++) {
+                if (tmp[i]) {
+                    arrIns.push(tmp[i])
+                }
+            }
+        });
+        await dbs.execute(`delete from recommendproducttogether`, [])
+        await dbs.execute(`insert into recommendproducttogether(productid, productrecommendid, val) values ?`, [arrIns]);
+    }
+    catch (err) {
+        console.log(err)
+    }
+}
+
+const quickSort = (arr) => {
+
+    if (arr.length < 2) return arr;
+
+    const pivotIndex = arr.length - 1;
+    const pivot = arr[pivotIndex];
+
+    const left = [];
+    const right = [];
+
+    let currentItem;
+    for (let i = 0; i < pivotIndex; i++) {
+        currentItem = arr[i];
+
+        if (currentItem[2] < pivot[2]) {
+            left.push(currentItem);
+        } else {
+            right.push(currentItem);
+        }
+    }
+
+    return [...quickSort(left), pivot, ...quickSort(right)];
+}
+
 const genRecommend = async () => {
     try {
         let rs = await dbs.execute(`SELECT o.customer_id, od.product_id, od.rating FROM order_detail od, orders o WHERE o.id = od.order_id`, []);
@@ -24,7 +126,7 @@ const genRecommend = async () => {
         await dbs.execute(`delete from recommend_product`, []);
         await dbs.execute(`insert into recommend_product(product_id, user_id, val) values ?`, [recommend]);
         console.log('Đồng bộ gợi ý thành công !');
-        
+
     }
     catch (err) {
         console.log(err)
@@ -149,3 +251,5 @@ var recommendation_eng = function (dataset, person, distance) {
 }
 
 module.exports.genRecommend = genRecommend
+
+module.exports.genRecommendProductTogether = genRecommendProductTogether
