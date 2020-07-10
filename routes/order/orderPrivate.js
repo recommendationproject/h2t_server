@@ -7,7 +7,7 @@ module.exports = (router) => {
   // auth(router, 'order');
 
   router.get('/', async (req, res, next) => {
-    let rs = await dbs.execute(`SELECT o.id, o.customer_id, c.name, o.status status_id, s.status FROM orders o, customer c, status s where o.customer_id = c.id and o.status = s.id order by o.status`, []);
+    let rs = await dbs.execute(`SELECT o.id, o.customer_id, c.name, o.status status_id, s.status FROM orders o, customer c, status s where o.customer_id = c.id and o.status = s.id  union all SELECT o.id, o.customer_id, c.name, o.status status_id, s.status FROM orders o, guest c, status s where o.customer_id = c.id and o.status = s.id order by status_id`, []);
     res.json(rs);
   });
 

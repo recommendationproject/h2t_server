@@ -6,6 +6,32 @@ const config = require('../utils/config');
 const bcrypt = require('bcryptjs');
 const { check, validationResult, body } = require('express-validator');
 
+router.get('/homepage', async (req, res) => {
+  let rsItemsActive = await dbs.execute(`SELECT count(*) as count FROM product WHERE STATUS = 1`, []);
+
+  let rsTotalUser = await dbs.execute(`SELECT count(*) as count FROM customer`, []);
+  let rsTotalGuest = await dbs.execute(`SELECT count(*) as count FROM guest`, []);
+  let rsOrderActive = await dbs.execute('select count(*) as count from `orders` o where status in (1,2,3,4) and year(o.adddate) =?', [req.headers.year]);
+  let rsOrderOfYear = await dbs.execute('select count(*) as count from `orders` o where year(o.adddate) =?', [req.headers.year]);
+  let rsTotal = await dbs.execute('SELECT ifnull(sum( od.amount*s.Price), 0) as total FROM product s, order_detail od, `orders` o WHERE o.ID = od.Order_ID and s.id = od.product_id and o.status =5 and year(o.adddate) = ?', [req.headers.year]);
+
+  let rsTotalByMonth = await dbs.execute('select count from (select a.month as month, sum(a.count) as count from (select 1 as month, 0 count union select 2 as month, 0 count union select 3 as month, 0 count  union select 4 as month, 0 count union select 5 as month, 0 count union select 6 as month, 0 count union select 7 as month, 0 count union select 8 as month, 0 count union select 9 as month, 0 count union select 10 as month, 0 count union select 11 as month, 0 count union select 12 as month, 0 COUNT union SELECT month(o.addDate) month, sum( od.amount*s.Price) count FROM product s, order_detail od, `orders` o WHERE o.ID = od.Order_ID and s.id = od.product_id and o.status =5 and year(o.addDate) =? group by month(o.addDate)) a group by a.month) a', [req.headers.year]);
+
+  let rsTotalByMonthLastYear = await dbs.execute('select count from (select a.month as month, sum(a.count) as count from (select 1 as month, 0 count union select 2 as month, 0 count union select 3 as month, 0 count  union select 4 as month, 0 count union select 5 as month, 0 count union select 6 as month, 0 count union select 7 as month, 0 count union select 8 as month, 0 count union select 9 as month, 0 count union select 10 as month, 0 count union select 11 as month, 0 count union select 12 as month, 0 COUNT union SELECT month(o.addDate) month, sum( od.amount*s.Price) count FROM product s, order_detail od, `orders` o WHERE o.ID = od.Order_ID and s.id = od.product_id and o.status =5 and year(o.addDate) =? group by month(o.addDate)) a group by a.month) a', [req.headers.year - 1]);
+
+  let rsPercentByCategory = await dbs.execute(`select CategoryName as name, total, round(total / (SUM(total) OVER (ORDER BY null))* 100) as percent from (SELECT c.name categoryname,sum(od.amount*s.Price) total FROM product s, order_detail od, orders o, category c WHERE  c.ID = s.Category_ID and o.ID = od.Order_ID and s.ID = od.product_id and o.status =5 and year(o.adddate) = 2020 group by s.Category_ID) a order by percent desc`, [req.headers.year]);
+
+  let rsTopCustomer = await dbs.execute(`SELECT  c.name, count(1) as count FROM orders o, customer c where c.id = o.customer_id group by o.customer_id limit 5`, []);
+
+  let rsLatestOrder = await dbs.execute(`SELECT o.id, o.adddate, case when SUBSTRING(o.customer_id, 1, 1) = 'c' then (SELECT c2.name from customer c2 WHERE id = o.customer_id) else (SELECT c3.name from guest c3 WHERE id = o.customer_id) end as customername, stt.ID statusid, stt.status, sum( od.amount*s.Price) as total FROM product s, order_detail od, orders o, status stt WHERE o.status = stt.ID and o.ID = od.Order_ID and od.product_id = s.id  group by o.id, o.adddate, customername, stt.status order by adddate desc limit 6`, []);
+  res.json({
+    rsItemsActive: rsItemsActive[0].count,
+    rsTotalUser: rsTotalUser[0].count, rsTotalGuest: rsTotalGuest[0].count, rsOrderActive: rsOrderActive[0].count, rsOrderOfYear: rsOrderOfYear[0].count, rsTotal: rsTotal[0].total, rsTotalByMonth: rsTotalByMonth, rsTotalByMonthLastYear: rsTotalByMonthLastYear, 
+     rsPercentByCategory: rsPercentByCategory,
+     rsTopCustomer: rsTopCustomer, rsLatestOrder: rsLatestOrder
+  });
+});
+
 router.post('/signin', async function (req, res) {
   let username = req.body.username;
   let password = req.body.password;
