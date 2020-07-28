@@ -104,8 +104,8 @@ const quickSort = (arr) => {
 
 const genRecommend = async () => {
     try {
-        let rs = await dbs.execute(`SELECT o.customer_id, od.product_id, od.rating FROM order_detail od, orders o WHERE o.id = od.order_id`, []);
-        let userToRecommend = await dbs.execute(`SELECT distinct customer_id FROM orders`, []);
+        let rs = await dbs.execute(`SELECT o.customer_id, od.product_id, max(od.rating) rating FROM order_detail od, orders o, customer c WHERE o.customer_id = c.id and o.id = od.order_id group by o.customer_id, od.product_id`, []);
+        let userToRecommend = await dbs.execute(`SELECT distinct o.customer_id FROM orders o, customer c, order_detail od WHERE o.customer_id = c.id and o.id = od.order_id`, []);
 
         var groups = {};
         for (var i = 0; i < rs.length; i++) {
@@ -217,6 +217,7 @@ var recommendation_eng = function (dataset, person, distance) {
 
         if (similar <= 0) continue;
         for (var item in dataset[other]) {
+            //  console.log(dataset, person);
             if (!(item in dataset[person]) || (dataset[person][item] == 0)) {
                 //the setter help to make this look nice.
                 totals.setDefault(item, dataset[other][item] * similar);

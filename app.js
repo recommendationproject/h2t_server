@@ -20,8 +20,9 @@ app.use(cors());
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-var cronRecommend = new CronJob('00 05 16 * * *', function() {
+var cronRecommend = new CronJob('00 34 20 * * *', function() {
   job.genRecommendProductTogether();
+  job.genRecommend();
  });
  cronRecommend.start();
 
