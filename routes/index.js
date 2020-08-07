@@ -26,9 +26,9 @@ router.get('/homepage', async (req, res) => {
   let rsLatestOrder = await dbs.execute(`SELECT o.id, o.adddate, case when SUBSTRING(o.customer_id, 1, 1) = 'c' then (SELECT c2.name from customer c2 WHERE id = o.customer_id) else (SELECT c3.name from guest c3 WHERE id = o.customer_id) end as customername, stt.ID statusid, stt.status, sum( od.amount*s.Price) as total FROM product s, order_detail od, orders o, status stt WHERE o.status = stt.ID and o.ID = od.Order_ID and od.product_id = s.id  group by o.id, o.adddate, customername, stt.status order by adddate desc limit 6`, []);
   res.json({
     rsItemsActive: rsItemsActive[0].count,
-    rsTotalUser: rsTotalUser[0].count, rsTotalGuest: rsTotalGuest[0].count, rsOrderActive: rsOrderActive[0].count, rsOrderOfYear: rsOrderOfYear[0].count, rsTotal: rsTotal[0].total, rsTotalByMonth: rsTotalByMonth, rsTotalByMonthLastYear: rsTotalByMonthLastYear, 
-     rsPercentByCategory: rsPercentByCategory,
-     rsTopCustomer: rsTopCustomer, rsLatestOrder: rsLatestOrder
+    rsTotalUser: rsTotalUser[0].count, rsTotalGuest: rsTotalGuest[0].count, rsOrderActive: rsOrderActive[0].count, rsOrderOfYear: rsOrderOfYear[0].count, rsTotal: rsTotal[0].total, rsTotalByMonth: rsTotalByMonth, rsTotalByMonthLastYear: rsTotalByMonthLastYear,
+    rsPercentByCategory: rsPercentByCategory,
+    rsTopCustomer: rsTopCustomer, rsLatestOrder: rsLatestOrder
   });
 });
 
@@ -45,7 +45,7 @@ router.post('/signin', async function (req, res) {
         delete user[0].password;
         // let path = await dbs.execute('SELECT gp.path, gp.post, gp.get, gp.put, gp.del from group_permission gp, map_employee_group meg, employee emp where gp.group_id=meg.group_id and meg.employee_id = emp.id and emp.username =  ?',[username]);
         var token = jwt.sign(JSON.parse(JSON.stringify(user[0])), config.secret, { expiresIn: config.expires });
-        res.json({ success: true, token: token,user:user[0], expires: new Date(Date.now() + config.expires * 1000) });
+        res.json({ success: true, token: token, user: user[0], expires: new Date(Date.now() + config.expires * 1000) });
       } else {
         res.status(200).send({ success: false, msg: 'Sai Tên Đăng Nhập Hoặc Mật Khẩu !' });
       }
@@ -103,7 +103,7 @@ router.post('/signup', [
       let bind = [customer_id, req.body.name, req.body.username, pass, req.body.address, req.body.email, req.body.phone];
       let rs = await dbs.execute(sql, bind);
       console.log(rs);
-      
+
       res.json(rs)
     }
   } catch (error) {
@@ -136,27 +136,27 @@ router.get('/categoryGroupByGender', async function (req, res) {
   res.json(returns);
 });
 
-router.get('/category/:type/:categoryId', async function (req, res) {  
+router.get('/category/:type/:categoryId', async function (req, res) {
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
-  let type = req.params.type==='type' ? 'c.gender_eng':'c.id';
-  let cateName = req.params.type==='type' ? 'c.gender':'c.name';
+  let type = req.params.type === 'type' ? 'c.gender_eng' : 'c.id';
+  let cateName = req.params.type === 'type' ? 'c.gender' : 'c.name';
   let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and ?? = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [type, req.params.categoryId, limit, offset]);
   let rsAll = await dbs.execute(`SELECT count(*) totalRow FROM product p, category c where p.status=1 and p.category_id = c.id and ?? = ?`, [type, req.params.categoryId]);
-  let cateNameRs =  await dbs.execute(`SELECT distinct ?? name FROM category c where ?? = ? `, [cateName,type, req.params.categoryId]);  
-  res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateNameRs[0].name});
+  let cateNameRs = await dbs.execute(`SELECT distinct ?? name FROM category c where ?? = ? `, [cateName, type, req.params.categoryId]);
+  res.json({ data: rs, currentPage: page, totalPage: Math.ceil(rsAll[0].totalRow / limit), cateName: cateNameRs[0].name });
 });
 
-router.post('/search', async function (req, res) {  
+router.post('/search', async function (req, res) {
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
-  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.name like CONCAT('%', ?,  '%') group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.body.keyword, limit, offset]);  
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.name like CONCAT('%', ?,  '%') group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.body.keyword, limit, offset]);
   let rsAll = await dbs.execute(`SELECT count(*) + 0 totalRow FROM product p where p.name like CONCAT('%', ?,  '%')`, [req.body.keyword]);
   console.log(rs);
-  
-  res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: req.body.keyword});
+
+  res.json({ data: rs, currentPage: page, totalPage: Math.ceil(rsAll[0].totalRow / limit), cateName: req.body.keyword });
 });
 
 router.get('/listProduct/:type', async function (req, res) {
@@ -164,109 +164,117 @@ router.get('/listProduct/:type', async function (req, res) {
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
   // let type = req.params.type==='type' ? 'c.gender_eng':'c.id';
-  let cateName = req.params.type==='new' ? 'NEW':'SALE';
+  let cateName = req.params.type === 'new' ? 'NEW' : 'SALE';
   let rs = [];
   let rsAll = [];
-  if(req.params.type==='sale'){
-    rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, p.price - (p.price/100*d.promotiontypeid) discountprice FROM discount d, product p, images i, category c where d.product_id = p.id  and i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [limit, offset]);    
+  if (req.params.type === 'sale') {
+    rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, p.price - (p.price/100*d.promotiontypeid) discountprice FROM discount d, product p, images i, category c where d.product_id = p.id  and i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [limit, offset]);
     rsAll = await dbs.execute(`SELECT count(*) totalRow FROM discount d, product p, images i, category c where d.product_id = p.id  and i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc`, []);
-  } else{
+  } else {
     rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [limit, offset]);
     rsAll = await dbs.execute(`SELECT count(*) totalRow FROM product p, category c where p.status=1 and p.category_id = c.id`, []);
   }
-  res.json({data:rs, currentPage:page, totalPage: Math.ceil(rsAll[0].totalRow/limit), cateName: cateName});
+  res.json({ data: rs, currentPage: page, totalPage: Math.ceil(rsAll[0].totalRow / limit), cateName: cateName });
 });
 
-router.get('/recommentBySupp/:suppid', async function (req, res) {  
+router.get('/recommentBySupp/:suppid', async function (req, res) {
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
-  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.suppid = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.params.suppid, limit, offset]);  
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.suppid = ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [req.params.suppid, limit, offset]);
   res.json(rs);
 });
 
-router.get('/recommentByPrice/:price', async function (req, res) {  
-  let fprice = parseInt(req.params.price)-50000;  
-  let tprice = parseInt(req.params.price)+50000;
+router.get('/recommentByPrice/:price', async function (req, res) {
+  let fprice = parseInt(req.params.price) - 50000;
+  let tprice = parseInt(req.params.price) + 50000;
   let limit = req.query.limit ? parseInt(req.query.limit) : 12;
   let page = req.query.page ? parseInt(req.query.page) : 1;
   let offset = limit * (page - 1);
-  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.price between ? and ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [fprice, tprice, limit, offset]);  
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, category c where i.product_id = p.id and p.status=1 and p.category_id = c.id and p.price between ? and ? group by i.product_id having min(i.id) order by p.id desc limit ? OFFSET ?`, [fprice, tprice, limit, offset]);
   res.json(rs);
 });
 
 router.post('/addCart', async function (req, res) {
   // console.log(req.body);
   // res.json('');
-  let check = await dbs.execute(`select * from  cart where product_id= ? and customer_id= ?`, [req.body.product_id, req.body.customer_id]);
+  let check = await dbs.execute(`select * from  cart where product_id= ? and customer_id= ? and size = ? and color = ?`, [req.body.product_id, req.body.customer_id, req.body.size, req.body.color]);
   let rs = null;
-  if(check.length > 0){
-   rs = await dbs.execute(`update cart set amount = ? where product_id= ? and customer_id= ? and size = ? and color = ?`, [check[0].amount+req.body.amount, req.body.product_id, req.body.customer_id, req.body.size, req.body.color]);
-  }else{
-  rs = await dbs.execute(`insert into cart(product_id, customer_id, amount, size, color) values(?,?,?,?,?)`, [req.body.product_id, req.body.customer_id, req.body.amount,req.body.size, req.body.color]);
+  console.log(check);
+  if (check.length > 0) {
+    rs = await dbs.execute(`update cart set amount = amount+? where product_id= ? and customer_id= ? and size = ? and color = ?`, [req.body.amount, req.body.product_id, req.body.customer_id, req.body.size, req.body.color]);
+  } else {
+    rs = await dbs.execute(`insert into cart(product_id, customer_id, amount, size, color) values(?,?,?,?,?)`, [req.body.product_id, req.body.customer_id, req.body.amount, req.body.size, req.body.color]);
   }
   res.json(rs);
 });
 
 router.get('/cart', async function (req, res) {
-  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, c.amount, c.size, c.color FROM product p, images i, cart c where i.product_id = p.id and p.id = c.product_id and p.status=1 and c.customer_id = ? group by i.product_id having min(i.id) order by p.id`, [req.headers.customer_id]);  
+  let rs = await dbs.execute(`SELECT p.id, p.name, p.price, i.images, c.amount, c.size, c.color FROM product p, images i, cart c where i.product_id = p.id and p.id = c.product_id and p.status=1 and c.customer_id = ? group by i.product_id, c.size, c.color having min(i.id) order by p.id`, [req.headers.customer_id]);
   res.json(rs);
 });
 
-router.post('/amountProduct', async function (req, res) {  
-  let rs = await dbs.execute(`update cart set amount = ? where product_id = ? and customer_id = ?, color = ?, size = ?`, [req.body.amount, req.body.productid, req.body.customerid, req.body.color, req.body.sizee]);   
-  res.json(rs);
+router.put('/amountProduct', async function (req, res) {
+  let checkNewExist = await dbs.  execute(`select * from cart where product_id = ? and customer_id = ? and color = ? and size = ?`, [req.body.newData.id, req.body.customerid, req.body.newData.color, req.body.newData.size]);
+  if (checkNewExist.length && (req.body.oldData.size !== req.body.newData.size || req.body.oldData.color !== req.body.newData.color)) {
+    await dbs.execute(`update cart set amount = amount+? where product_id = ? and customer_id = ? and color = ? and size = ?`, [req.body.newData.amount, req.body.newData.id, req.body.customerid, req.body.newData.color, req.body.newData.size]);
+    await dbs.execute(`delete from cart where product_id = ? and customer_id = ? and color = ? and size = ?`, [req.body.oldData.id, req.body.customerid, req.body.oldData.color, req.body.oldData.size]);
+  } else {
+    // console.log(req.body);
+    await dbs.execute(`update cart set amount = ?,  color = ?, size = ? where product_id = ? and customer_id = ? and color = ? and size = ?`, [req.body.newData.amount, req.body.newData.color, req.body.newData.size, req.body.newData.id, req.body.customerid, req.body.oldData.color, req.body.oldData.size]);
+  }
+  res.json('success');
 });
 
-router.get('/amountProduct', async function (req, res) {  
+router.get('/amountProduct', async function (req, res) {
   if (JSON.parse(req.headers.arr).length) {
-    let rs = await dbs.execute(`SELECT id, amount FROM product p where id in (?)`, [JSON.parse(req.headers.arr)]);   
-  res.json(rs);
-  }else {
-  res.json(null);
+    let rs = await dbs.execute(`SELECT id, amount FROM product p where id in (?)`, [JSON.parse(req.headers.arr)]);
+    res.json(rs);
+  } else {
+    res.json(null);
   }
 });
 
-router.get('/getCommentByProduct', async function (req, res) {  
- 
-    let rs = await dbs.execute(`SELECT od.id, od.rating, od.comment, c.name FROM order_detail od, orders o, customer c WHERE o.id = od.order_id and o.customer_id = c.id and product_id = ? 
+router.get('/getCommentByProduct', async function (req, res) {
+
+  let rs = await dbs.execute(`SELECT od.id, od.rating, od.comment, c.name FROM order_detail od, orders o, customer c WHERE o.id = od.order_id and o.customer_id = c.id and product_id = ? 
     union ALL
-    SELECT od.id, od.rating, od.comment, c.name FROM order_detail od, orders o, guest c WHERE o.id = od.order_id and o.customer_id = c.id and product_id = ? `, [req.headers.id, req.headers.id]);   
+    SELECT od.id, od.rating, od.comment, c.name FROM order_detail od, orders o, guest c WHERE o.id = od.order_id and o.customer_id = c.id and product_id = ? `, [req.headers.id, req.headers.id]);
   res.json(rs);
- 
+
 });
 
 router.delete('/cart', async function (req, res) {
-  let rs = await dbs.execute(`delete FROM cart where product_id =? and customer_id=?`, [req.headers.product_id, req.headers.customer_id]);  
+  let rs = await dbs.execute(`delete FROM cart where product_id =? and customer_id=? and color = ? and size = ?`, [req.headers.product_id, req.headers.customer_id, req.headers.color, req.headers.size]);
   res.json(rs);
 });
 
 router.post('/checkout', async function (req, res) {
-  
+
   let check = await dbs.execute(`select * from  cart where customer_id= ?`, [req.body.customer_id]);
   if (check.length > 0) {
-    const orderid = await dbs.getNextID('orders','id'); 
+    const orderid = await dbs.getNextID('orders', 'id');
     let createOrder = await dbs.execute(`insert into orders(id, customer_id, address, comment, paymentmethod) values(?,?,?,?,?)`, [orderid, req.body.customer_id, req.body.address, req.body.comment, req.body.tt]);
-    if(createOrder.affectedRows>0){
+    if (createOrder.affectedRows > 0) {
       let createOrderDetail = await dbs.execute(`insert into order_detail(product_id,order_id, amount, size, color) select product_id, ?, amount, size, color from cart where customer_id= ?`, [orderid, req.body.customer_id]);
-      if(createOrderDetail.affectedRows>0){
-         await dbs.execute(`delete from cart where customer_id= ?`, [req.body.customer_id]);
+      if (createOrderDetail.affectedRows > 0) {
+        await dbs.execute(`delete from cart where customer_id= ?`, [req.body.customer_id]);
       }
     }
   }
   res.json('rs');
 });
 
-router.post('/checkoutforguest', async function (req, res) {    
+router.post('/checkoutforguest', async function (req, res) {
   if (req.body.customer) {
-    const guestid = await dbs.getNextID('guest','id'); 
-     await dbs.execute(`insert into guest(id, name, phone, email, address) values(?,?,?,?,?)`, [guestid, req.body.customer.name, req.body.customer.phone, req.body.customer.email, req.body.customer.address]);
-    const orderid = await dbs.getNextID('orders','id'); 
+    const guestid = await dbs.getNextID('guest', 'id');
+    await dbs.execute(`insert into guest(id, name, phone, email, address) values(?,?,?,?,?)`, [guestid, req.body.customer.name, req.body.customer.phone, req.body.customer.email, req.body.customer.address]);
+    const orderid = await dbs.getNextID('orders', 'id');
     let createOrder = await dbs.execute(`insert into orders(id, customer_id, address, comment, paymentmethod) values(?,?,?,?,?)`, [orderid, guestid, req.body.customer.address, req.body.customer.comment, req.body.customer.tt]);
-    if(createOrder.affectedRows>0){
-      let bind  = [];
+    if (createOrder.affectedRows > 0) {
+      let bind = [];
       req.body.product.forEach(e => {
-          bind.push([e.id, orderid, e.amount, e.size, e.color])
+        bind.push([e.id, orderid, e.amount, e.size, e.color])
       });
       await dbs.execute(`insert into order_detail(product_id,order_id, amount, size, color) values ?`, [bind]);
     }
