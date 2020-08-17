@@ -25,7 +25,7 @@ router.get('/byuser', async (req, res, next) => {
         });
         sql += `end), comment = ( case`;
         req.body.value.forEach(e => {
-          sql += ` when id = ${e.odid} then '${e.comment}' `
+          sql += ` when id = ${e.odid} then ${e.comment} `
       });
         sql += `end) where order_id = '${req.body.value[0].order_id}'`        
      let rs = await dbs.execute(sql, []);
