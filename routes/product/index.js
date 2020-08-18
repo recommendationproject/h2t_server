@@ -23,7 +23,7 @@ router.get('/', async (req, res, next) => {
 router.get('/recommendbyid/:id', async (req, res, next) => {
   let rsRecommend = [];
   
-     rsRecommend =await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i where i.product_id = p.id and p.status=1 and p.id in (select productrecommendid from recommendproducttogether where productid = ? order by val desc) group by i.product_id having min(i.id)`,[req.params.id]);
+     rsRecommend =await dbs.execute(`SELECT p.id, p.name, p.price, i.images FROM product p, images i, recommendproducttogether rpr where i.product_id = p.id and p.status=1 and p.id =rpr.productrecommendid and rpr.productid = '?' group by i.product_id having min(i.id) order by rpr.val desc`,[req.params.id]);
  
   res.json({recommend: rsRecommend});
 });
